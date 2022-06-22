@@ -1,4 +1,4 @@
-package Practice1;
+package PacketPackage;
 
 public class CRC16 {
     public static short getCRC16(byte[] bytes) {

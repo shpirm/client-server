@@ -1,6 +1,7 @@
-package Practice1;
+package PacketPackage;
 
-import javax.crypto.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
