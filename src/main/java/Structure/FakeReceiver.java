@@ -1,11 +1,5 @@
 package Structure;
 
-import Packet.Packet;
-import javafx.util.Pair;
-
-import java.net.Socket;
-import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.*;
 
 public class FakeReceiver extends Thread implements Receiver {
@@ -53,17 +47,4 @@ public class FakeReceiver extends Thread implements Receiver {
     public void receiveMessage(byte[] packet) {
         queueOfPackets.add(packet);
     }
-
-    private byte[] getBrokenPacket() {
-        final int PACKET_MAX_SIZE = 20;
-
-        Random rn = new Random();
-        final int packetSize = rn.nextInt(PACKET_MAX_SIZE) + 1;
-
-        byte[] brokenPacketArray = new byte[packetSize];
-        brokenPacketArray[rn.nextInt(packetSize)] = Packet.getBMagic();
-
-        return brokenPacketArray;
-    }
-
 }

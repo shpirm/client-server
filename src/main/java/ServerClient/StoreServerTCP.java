@@ -2,6 +2,7 @@ package ServerClient;
 
 import Shop.Command;
 import Structure.FakeReceiver;
+import Structure.Sender;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -20,6 +21,8 @@ public class StoreServerTCP extends Thread {
     public StoreServerTCP(int port) throws IOException {
         serverSocket = new ServerSocket(port);
         receiver = new FakeReceiver();
+
+        Sender.isServerTCP = true;
     }
 
 
@@ -38,12 +41,17 @@ public class StoreServerTCP extends Thread {
                 }
             }
         }
+        receiver.doStop();
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void doStop() throws IOException {
+    public void doStop() {
         shutdown = true;
-        receiver.doStop();
-        serverSocket.close();
+
     }
 
     private class ClientHandler extends Thread {

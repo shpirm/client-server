@@ -1,26 +1,24 @@
-
-import ServerClient.StoreClientTCP;
-import ServerClient.StoreServerTCP;
+import ServerClient.StoreClientUDP;
+import ServerClient.StoreServerUDP;
 import Shop.Command;
 import javafx.util.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-
-public class ServerTCPTest {
+public class ServerUDPTest {
     public static Queue<Pair<Command, JSONObject>>
             queueOfPackets = new ConcurrentLinkedQueue<>();
 
     @Test
-    public void controlledLoadServerTest() throws IOException, InterruptedException {
-
-        StoreServerTCP server = new StoreServerTCP(1337);
+    public void controlledLoadServerTest() throws Exception {
+        StoreServerUDP server = new StoreServerUDP(1337);
         server.start();
 
         final int MAX_CLIENT_NUMBER = 5;
@@ -43,46 +41,57 @@ public class ServerTCPTest {
         server.doStop();
     }
 
-    class FakeClient extends Thread {
-        private StoreClientTCP client;
+    @Test
+    public void packetLostTest() throws Exception {
+        final int PORT = 1337;
+        StoreServerUDP server = new StoreServerUDP(PORT);
+        server.start();
 
-        FakeClient() throws IOException {
-            client = new StoreClientTCP();
-            client.startConnection("127.0.0.1", 1337);
+        long time = System.currentTimeMillis();
+
+        StoreClientUDP client = new StoreClientUDP();
+        client.sendMessage(Command.PRODUCT_ADD, new JSONObject(), PORT);
+
+        System.out.println("Time = " + (System.currentTimeMillis() - time));
+        server.doStop();
+    }
+
+    class FakeClient extends Thread {
+        private final int PORT = 1337;
+        private StoreClientUDP client;
+
+        FakeClient() throws SocketException, UnknownHostException {
+            client = new StoreClientUDP();
         }
 
         public void run() {
             while (true) {
-                if (queueOfPackets.size() == 0) {
+                if (queueOfPackets.size() != 0) {
+                    synchronized (queueOfPackets) {
+                        Pair<Command, JSONObject> pair = queueOfPackets.poll();
+                        try {
+                            if (pair != null) {
+                                client.sendMessage(pair.getKey(), pair.getValue(), PORT);
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                } else {
                     try {
-                        Thread.sleep(500);
-                        if (queueOfPackets.size() == 0) break;
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                } else {
-                    Pair<Command, JSONObject> pair = queueOfPackets.poll();
-                    try {
-                        if (pair != null) {
-                            client.sendMessage(pair.getKey(), pair.getValue());
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    if (queueOfPackets.size() == 0) break;
                 }
-            }
-            try {
-                client.stopSocket();
-                client.stopConnection();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
         }
     }
 
     class LoadPacketsArray extends Thread {
 
-        final static int PRODUCT_NUMBER = 500;
+        final static int PRODUCT_NUMBER = 600;
         final static int PRODUCT_AMOUNT = 100;
         final static int PRODUCT_PRICE = 1000;
         final static int PRODUCT_AMOUNT_CHANGE = 10;
@@ -135,4 +144,3 @@ public class ServerTCPTest {
         }
     }
 }
-

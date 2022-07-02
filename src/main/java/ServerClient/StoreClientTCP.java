@@ -12,6 +12,8 @@ import java.util.Arrays;
 
 public class StoreClientTCP {
     private static int userID = 0;
+
+    private static int packetID = 0;
     private int clientUserId;
     private Socket clientSocket;
     private PrintWriter out;
@@ -25,7 +27,7 @@ public class StoreClientTCP {
     }
 
     public void sendMessage(Command command, JSONObject object) throws IOException {
-        out.println(Arrays.toString(getPacket(command, object, clientUserId)));
+        out.println(Arrays.toString(getPacket(command, object, clientUserId, packetID++)));
         System.out.println(in.readLine());
     }
 
@@ -39,7 +41,7 @@ public class StoreClientTCP {
         clientSocket.close();
     }
 
-    private static byte[] getPacket(Command command, JSONObject object, int userID) throws UnsupportedEncodingException {
+    private static byte[] getPacket(Command command, JSONObject object, int userID, int packetID) throws UnsupportedEncodingException {
 
         byte[] messageInfo = object.toString().getBytes("utf-8");
 
@@ -55,7 +57,7 @@ public class StoreClientTCP {
 
         bufferPkt.put(Packet.getBMagic())
                 .put((byte) 0)
-                .putLong(userID)
+                .putLong(packetID)
                 .putInt(MESSAGE_SIZE);
 
         short wCrc16Pkt = CRC16.getCRC16(bufferPkt.array());

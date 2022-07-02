@@ -3,25 +3,30 @@ package Structure;
 import Packet.Packet;
 import ServerClient.StoreServerTCP;
 import Packet.Message;
+import ServerClient.StoreServerUDP;
 import javafx.util.Pair;
 
 
-import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Sender extends Thread {
 
+    public static boolean isServerTCP;
+
+    private final int PORT = 1337;
+
     private boolean stop;
     private ExecutorService service;
 
     private static final int THREAD_AMOUNT = 3;
-
 
     private ConcurrentLinkedQueue<Pair<Integer, byte[]>> queueOfPackets;
 
@@ -57,11 +62,17 @@ public class Sender extends Thread {
     }
 
     private void command(int target, byte[] message) throws Exception {
-        Socket clientSocket = StoreServerTCP.clientMap.get(target);
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+        if (isServerTCP) {
+            Socket clientSocket = StoreServerTCP.clientMap.get(target);
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
-        out.println("User " + target + " received " + parseMessageIntoString(message) + " Thread = "
-                + Thread.currentThread().getName());
+            out.println("User " + target + " received " + parseMessageIntoString(message) + " Thread = "
+                    + Thread.currentThread().getName());
+        } else {
+            Pair<InetAddress, Integer> address = StoreServerUDP.clientMap.get(target);
+            DatagramPacket packet = new DatagramPacket(message, message.length, address.getKey(), address.getValue());
+            new DatagramSocket().send(packet);
+        }
     }
 
     private String parseMessageIntoString(byte[] message) throws Exception {

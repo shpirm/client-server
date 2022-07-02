@@ -1,17 +1,10 @@
 package Structure;
 
 import Packet.Packet;
-import Shop.Command;
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class Encryptor extends Thread {
 
@@ -29,7 +22,9 @@ public class Encryptor extends Thread {
 
         queueOfPackets = new ConcurrentLinkedQueue<>();
         service = Executors.newFixedThreadPool(THREAD_AMOUNT);
+
         sender = new Sender();
+
         sender.start();
 
         while (stop) {
@@ -66,23 +61,20 @@ public class Encryptor extends Thread {
         ByteBuffer buffer = ByteBuffer.allocate(PACKET_DATA_SIZE + Short.BYTES
                 + MESSAGE_SIZE + Short.BYTES);
 
-            buffer.put(Packet.getBMagic());
-            buffer.put(packet.getBSrc());
+        buffer.put(Packet.getBMagic());
+        buffer.put(packet.getBSrc());
 
-            buffer.putLong(packet.getBPktId());
-            buffer.putInt(packet.getWLen());
+        buffer.putLong(packet.getBPktId());
+        buffer.putInt(packet.getWLen());
 
-            buffer.putShort(packet.getWCrc16());
+        buffer.putShort(packet.getWCrc16());
 
-            buffer.putInt(packet.getBMsg().getCType());
-            buffer.putInt(packet.getBMsg().getBUserId());
-            buffer.put(packet.getBMsg().getMessage());
+        buffer.putInt(packet.getBMsg().getCType());
+        buffer.putInt(packet.getBMsg().getBUserId());
+        buffer.put(packet.getBMsg().getMessage());
 
-            buffer.putShort(packet.getWCrc16Msg());
+        buffer.putShort(packet.getWCrc16Msg());
 
-
-
-        byte[] bytes = buffer.array();
         sender.sendMessage(packet.getBMsg().getBUserId(), buffer.array());
     }
 }
