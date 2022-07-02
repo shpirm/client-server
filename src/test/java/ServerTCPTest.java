@@ -1,6 +1,8 @@
 
 import ServerClient.StoreClientTCP;
+import ServerClient.StoreClientUDP;
 import ServerClient.StoreServerTCP;
+import ServerClient.StoreServerUDP;
 import Shop.Command;
 import javafx.util.Pair;
 import org.json.JSONArray;
@@ -41,6 +43,23 @@ public class ServerTCPTest {
 
         System.out.println("Time = " + (System.currentTimeMillis() - time));
         server.doStop();
+    }
+
+    @Test
+    public void noServerConnectionTest() throws IOException, InterruptedException {
+
+        StoreServerTCP server = new StoreServerTCP(1337);
+        server.start();
+
+        StoreClientTCP client = new StoreClientTCP();
+        client.startConnection("127.0.0.1", 1337);
+
+        server.doStop();
+        long time = System.currentTimeMillis();
+        client.sendMessage(Command.PRODUCT_ADD, new JSONObject());
+
+        System.out.println("Time = " + (System.currentTimeMillis() - time));
+        client.stopSocket();
     }
 
     class FakeClient extends Thread {

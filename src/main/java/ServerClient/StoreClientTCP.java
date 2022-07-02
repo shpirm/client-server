@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -26,9 +27,23 @@ public class StoreClientTCP {
         in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
     }
 
-    public void sendMessage(Command command, JSONObject object) throws IOException {
-        out.println(Arrays.toString(getPacket(command, object, clientUserId, packetID++)));
-        System.out.println(in.readLine());
+    public void sendMessage(Command command, JSONObject object) throws IOException, InterruptedException {
+        while (true) {
+            out.println(Arrays.toString(getPacket(command, object, clientUserId, packetID++)));
+            Thread.sleep(50);
+            if (in.ready()) {
+                System.out.println(in.readLine());
+                break;
+            }
+            else {
+                System.out.println("No connection! Waiting...");
+                Thread.sleep(1000);
+                if (!in.ready()) {
+                    System.out.println("No connection! Exit");
+                    break;
+                } else System.out.println(in.readLine());
+            }
+        }
     }
 
     public void stopSocket() {

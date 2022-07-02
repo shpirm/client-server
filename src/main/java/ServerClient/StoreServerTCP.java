@@ -21,6 +21,7 @@ public class StoreServerTCP extends Thread {
     public StoreServerTCP(int port) throws IOException {
         serverSocket = new ServerSocket(port);
         receiver = new FakeReceiver();
+        receiver.start();
 
         Sender.isServerTCP = true;
     }
@@ -28,7 +29,6 @@ public class StoreServerTCP extends Thread {
 
     public void run() {
         shutdown = false;
-        receiver.start();
 
         while (!shutdown) {
             try {

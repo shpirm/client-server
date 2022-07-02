@@ -91,7 +91,7 @@ public class ServerUDPTest {
 
     class LoadPacketsArray extends Thread {
 
-        final static int PRODUCT_NUMBER = 600;
+        final static int PRODUCT_NUMBER = 500;
         final static int PRODUCT_AMOUNT = 100;
         final static int PRODUCT_PRICE = 1000;
         final static int PRODUCT_AMOUNT_CHANGE = 10;
