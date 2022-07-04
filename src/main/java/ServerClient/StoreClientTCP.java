@@ -2,12 +2,11 @@ package ServerClient;
 
 import Packet.CRC16;
 import Packet.Packet;
-import Shop.Command;
+import Shop.UserCommand;
 import org.json.JSONObject;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -27,27 +26,21 @@ public class StoreClientTCP {
         in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
     }
 
-    public void sendMessage(Command command, JSONObject object) throws IOException, InterruptedException {
-        while (true) {
-            out.println(Arrays.toString(getPacket(command, object, clientUserId, packetID++)));
-            Thread.sleep(50);
-            if (in.ready()) {
-                System.out.println(in.readLine());
-                break;
-            }
-            else {
-                System.out.println("No connection! Waiting...");
-                Thread.sleep(1000);
-                if (!in.ready()) {
-                    System.out.println("No connection! Exit");
-                    break;
-                } else System.out.println(in.readLine());
-            }
+    public void sendMessage(UserCommand command, JSONObject object) throws IOException, InterruptedException {
+        out.println(Arrays.toString(getPacket(command, object, clientUserId, packetID++)));
+        Thread.sleep(100);
+//        System.out.println("User " + clientUserId + " received: " + in.readLine());
+        if (in.ready()) System.out.println("User " + clientUserId + " received: " + in.readLine());
+        else {
+            System.out.println("User " + clientUserId + ": No answer! Tried again...");
+            Thread.sleep(500);
+            if (!in.ready()) System.out.println("User " + clientUserId + ": No final answer!");
+            else System.out.println("User " + clientUserId + " received: " + in.readLine());
         }
     }
 
     public void stopSocket() {
-        out.println(Command.CLOSE);
+        out.println(UserCommand.CLOSE);
     }
 
     public void stopConnection() throws IOException {
@@ -56,7 +49,7 @@ public class StoreClientTCP {
         clientSocket.close();
     }
 
-    private static byte[] getPacket(Command command, JSONObject object, int userID, int packetID) throws UnsupportedEncodingException {
+    private static byte[] getPacket(UserCommand command, JSONObject object, int userID, int packetID) throws UnsupportedEncodingException {
 
         byte[] messageInfo = object.toString().getBytes("utf-8");
 

@@ -21,12 +21,10 @@ public class Sender extends Thread {
 
     public static boolean isServerTCP;
 
-    private final int PORT = 1337;
-
     private boolean stop;
     private ExecutorService service;
 
-    private static final int THREAD_AMOUNT = 3;
+    private static final int THREAD_AMOUNT = 10;
 
     private ConcurrentLinkedQueue<Pair<Integer, byte[]>> queueOfPackets;
 
@@ -65,9 +63,8 @@ public class Sender extends Thread {
         if (isServerTCP) {
             Socket clientSocket = StoreServerTCP.clientMap.get(target);
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            out.println(parseMessageIntoString(message));
 
-            out.println("User " + target + " received " + parseMessageIntoString(message) + " Thread = "
-                    + Thread.currentThread().getName());
         } else {
             Pair<InetAddress, Integer> address = StoreServerUDP.clientMap.get(target);
             DatagramPacket packet = new DatagramPacket(message, message.length, address.getKey(), address.getValue());

@@ -1,0 +1,26 @@
+package Shop;
+
+public enum UserCommand {
+
+    PRODUCT_NAME,
+    PRODUCT_AMOUNT,
+    PRODUCT_PRICE,
+    PRODUCT_GROUP,
+
+    PRODUCT_INSERT,
+    PRODUCT_READ,
+    PRODUCT_DELETE,
+    PRODUCT_LIST,
+
+    GROUP_INSERT,
+    GROUP_READ,
+    GROUP_DELETE,
+    GROUP_LIST,
+
+    GROUP_NAME,
+
+    ANSWER,
+    ERROR,
+    CLOSE;
+}
+

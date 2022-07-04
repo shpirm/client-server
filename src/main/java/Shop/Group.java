@@ -1,33 +1,52 @@
 package Shop;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class Group {
 
-    private String name;
+    private int id;
 
-    Group(String name) {
+    private String name;
+    private ArrayList<Integer> productsID;
+
+    public Group(int id, String name) {
+        this.id = id;
         this.name = name;
+
+        productsID = new ArrayList<>();
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
-    public String getName() {
-        return name;
+
+    public ArrayList<Integer> getProductsID() {
+        return productsID;
     }
+
+    public void setProductsID(ArrayList<Integer> productsID) {
+        this.productsID = productsID;
+    }
+
 
     @Override
     public String toString() {
-        ArrayList<Product> arrayList = new ArrayList<Product>();
-        for (Product product : Shop.productList)
-            if (Objects.equals(product.getGroupName(), this.name))
-                arrayList.add(product);
-
-        return "Group {" +
-                "name = '" + name + '\'' +
-                ", products = " + arrayList +
-                '}';
+        return "Group { " +
+                "id = " + id +
+                ", name = '" + name + '\'' +
+                ", productsID = " + productsID +
+                " }";
     }
 }

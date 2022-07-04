@@ -2,7 +2,8 @@ package ServerClient;
 
 import Packet.CRC16;
 import Packet.Packet;
-import Shop.Command;
+import Packet.Message;
+import Shop.UserCommand;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -29,12 +30,12 @@ public class StoreClientUDP {
         address = InetAddress.getByName("localhost");
     }
 
-    public void sendMessage(Command command, JSONObject object, int port) throws Exception {
+    public void sendMessage(UserCommand command, JSONObject object, int port) throws Exception {
         message = getPacket(command, object, clientUserId, packetID++);
         DatagramPacket packet
                 = new DatagramPacket(message, message.length, address, port);
 
-        final int ATTEMPTS = 5;
+        final int ATTEMPTS = 3;
         int index = 0;
         while (true) {
             try {
@@ -67,7 +68,7 @@ public class StoreClientUDP {
         socket.close();
     }
 
-    private static byte[] getPacket(Command command, JSONObject object, int userID, int packetID) throws UnsupportedEncodingException {
+    private static byte[] getPacket(UserCommand command, JSONObject object, int userID, int packetID) throws UnsupportedEncodingException {
 
         byte[] messageInfo = object.toString().getBytes("utf-8");
 
@@ -102,21 +103,25 @@ public class StoreClientUDP {
         return buffer.array();
     }
 
-    private String parseMessageIntoString(byte[] message) {
+    private String parseMessageIntoString(byte[] message) throws Exception {
 
-        String answer = "{ packetID = ";
         ByteBuffer buffer = ByteBuffer.wrap(message);
+        Packet packet = new Packet();
 
         buffer.get();
-        buffer.get();
+        packet.setBSrc(buffer.get());
+        packet.setBPktId(buffer.getLong());
 
-        answer += buffer.getLong();
+        int wLen = buffer.getInt();
+        packet.setWLen(wLen);
 
-        buffer.getInt();
-        buffer.getShort();
-        answer += ", cType = " + buffer.getInt();
-        answer += ", userID = " + buffer.getInt() + " }";
+        packet.setWCrc16(buffer.getShort());
 
-        return answer;
+        packet.setBMsg(new Message(buffer, wLen));
+
+        packet.setWCrc16Msg(buffer.getShort());
+
+
+        return packet.toString();
     }
 }

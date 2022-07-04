@@ -15,7 +15,7 @@ public class Descriptor extends Thread {
     private ExecutorService service;
     private Processor processor;
 
-    private static final int THREAD_AMOUNT = 3;
+    private static final int THREAD_AMOUNT = 10;
 
 
     private ConcurrentLinkedQueue<byte[]> queueOfPackets;

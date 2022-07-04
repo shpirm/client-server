@@ -10,8 +10,6 @@ public class FakeReceiver extends Thread implements Receiver {
 
     private Descriptor descriptor;
 
-
-
     private ConcurrentLinkedQueue<byte[]> queueOfPackets;
 
     public void run() {

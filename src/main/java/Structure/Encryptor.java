@@ -12,7 +12,7 @@ public class Encryptor extends Thread {
     private ExecutorService service;
     private Sender sender;
 
-    private static final int THREAD_AMOUNT = 3;
+    private static final int THREAD_AMOUNT = 10;
 
 
     private ConcurrentLinkedQueue<Packet> queueOfPackets;

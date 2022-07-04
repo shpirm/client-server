@@ -2,14 +2,15 @@ package Structure;
 
 import Packet.Message;
 import Packet.Packet;
-import Shop.Command;
-import Shop.Shop;
+import Shop.ShopDatabase;
+import Shop.UserCommand;
 import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
+import org.sqlite.SQLiteException;
 
 
 import java.nio.ByteBuffer;
+import java.sql.SQLException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,15 +21,22 @@ public class Processor extends Thread {
     private ExecutorService service;
     private Encryptor encryptor;
 
-    private static final int THREAD_AMOUNT = 3;
+    private ShopDatabase db;
 
+    private static final int THREAD_AMOUNT = 15;
     private ConcurrentLinkedQueue<Packet> queueOfPackets;
+
+    public Processor() {
+        db = new ShopDatabase();
+        db.initialization();
+    }
 
     public void run() {
         stop = true;
 
         queueOfPackets = new ConcurrentLinkedQueue<>();
         service = Executors.newFixedThreadPool(THREAD_AMOUNT);
+
         encryptor = new Encryptor();
         encryptor.start();
 
@@ -57,84 +65,119 @@ public class Processor extends Thread {
     }
 
     private void command(Packet packet) throws Exception {
-        Command command = Command.values()[packet.getBMsg().getCType()];
+        UserCommand command = UserCommand.values()[packet.getBMsg().getCType()];
         JSONObject jsonObject = new JSONObject(IOUtils.toString(packet.getBMsg().getMessage()));
 
-        switch (command) {
-            case PRODUCT_ADD -> {
-                String productName = String.valueOf(jsonObject.get("productName"));
-                int amount = (int) jsonObject.get("amount");
-                synchronized (Shop.productList) {
-                    Shop.addProduct(productName, amount);
-                }
-            }
-            case PRODUCT_INFO -> {
-                String productName = String.valueOf(jsonObject.get("productName"));
-                synchronized (Shop.productList) {
-                    Shop.getProductInfo(productName);
-                }
-            }
-            case PRODUCT_INCREASE -> {
-                String productName = String.valueOf(jsonObject.get("productName"));
-                int amount = (int) jsonObject.get("amount");
-                synchronized (Shop.productList) {
-                    Shop.productAmountIncrease(productName, amount);
-                }
-            }
-            case PRODUCT_DECREASE -> {
-                String productName = String.valueOf(jsonObject.get("productName"));
-                int amount = (int) jsonObject.get("amount");
-                synchronized (Shop.productList) {
-                    Shop.productAmountDecrease(productName, amount);
-                }
-            }
-            case PRODUCT_DELETE -> {
-                String productName = String.valueOf(jsonObject.get("productName"));
-                synchronized (Shop.productList) {
-                    Shop.deleteProduct(productName);
-                }
-            }
-            case PRODUCT_PRICE -> {
-                String productName = String.valueOf(jsonObject.get("productName"));
-                int price = (int) jsonObject.get("price");
-                synchronized (Shop.productList) {
-                    Shop.setProductPrice(productName, price);
-                }
-            }
-            case GROUP_CREATE -> {
-                String groupName = String.valueOf(jsonObject.get("groupName"));
+        UserCommand answerCommand = UserCommand.ANSWER;
+        byte[] answer = new byte[0];
 
-                JSONArray jsonArray = jsonObject.getJSONArray("productNames");
-                String[] productNames = new String[jsonArray.length()];
-                for (int i = 0; i < jsonArray.length(); i++)
-                    productNames[i] = jsonArray.getString(i);
-                synchronized (Shop.groupList) {
-                    synchronized (Shop.productList) {
-                        Shop.createGroup(groupName, productNames);
+        try {
+            switch (command) {
+                case PRODUCT_INSERT -> {
+                    synchronized (db) {
+                        db.insertProduct(
+                                String.valueOf(jsonObject.get("ProductName")),
+                                jsonObject.getInt("ProductAmount"),
+                                jsonObject.getDouble("ProductPrice"),
+                                String.valueOf(jsonObject.get("GroupName")));
                     }
                 }
-            }
-            case GROUP_NAME_CHANGE -> {
-                String oldName = String.valueOf(jsonObject.get("oldName"));
-                String newName = String.valueOf(jsonObject.get("newName"));
-                synchronized (Shop.groupList) {
-                    Shop.changeGroupName(oldName, newName);
+                case PRODUCT_READ -> {
+                    synchronized (db) {
+                        answer = db.readProduct(
+                                String.valueOf(jsonObject.get("ProductName"))).toString().getBytes();
+                    }
                 }
+                case PRODUCT_DELETE -> {
+                    synchronized (db) {
+                        db.deleteProduct(
+                                String.valueOf(jsonObject.get("ProductName")));
+                    }
+                }
+                case PRODUCT_LIST -> {
+                    synchronized (db) {
+                        answer = db.getProductList(
+                                String.valueOf(jsonObject.get("Criteria"))).toString().getBytes();
+                    }
+                }
+                case PRODUCT_NAME -> {
+                    synchronized (db) {
+                        db.updateProductName(
+                                String.valueOf(jsonObject.get("ProductName")),
+                                String.valueOf(jsonObject.get("NewProductName")));
+                    }
+                }
+                case PRODUCT_PRICE -> {
+                    synchronized (db) {
+                        db.updateProductPrice(
+                                String.valueOf(jsonObject.get("ProductName")),
+                                jsonObject.getDouble("ProductPrice"));
+                    }
+                }
+                case PRODUCT_AMOUNT -> {
+                    synchronized (db) {
+                        db.updateProductAmount(
+                                String.valueOf(jsonObject.get("ProductName")),
+                                jsonObject.getInt("ProductAmount"));
+                    }
+                }
+                case PRODUCT_GROUP -> {
+                    synchronized (db) {
+                        db.updateProductGroup(
+                                String.valueOf(jsonObject.get("ProductName")),
+                                String.valueOf(jsonObject.get("GroupName")));
+                    }
+                }
+                case GROUP_INSERT -> {
+                    synchronized (db) {
+                        db.insertGroup(
+                                String.valueOf(jsonObject.get("GroupName")));
+                    }
+                }
+                case GROUP_READ -> {
+                    synchronized (db) {
+                        answer = db.readGroup(
+                                String.valueOf(jsonObject.get("GroupName"))).toString().getBytes();
+                    }
+                }
+                case GROUP_DELETE -> {
+                    synchronized (db) {
+                        db.deleteGroup(
+                                String.valueOf(jsonObject.get("GroupName")));
+                    }
+                }
+                case GROUP_LIST -> {
+                    synchronized (db) {
+                        answer = db.getGroupList(
+                                String.valueOf(jsonObject.get("Criteria"))).toString().getBytes();
+                    }
+                }
+                case GROUP_NAME -> {
+                    synchronized (db) {
+                        db.updateGroupName(
+                                String.valueOf(jsonObject.get("GroupName")),
+                                String.valueOf(jsonObject.get("NewGroupName")));
+                    }
+                }
+                default -> throw new SQLException("Unexpected command. ");
             }
+        } catch (SQLiteException e) {
+            answerCommand = UserCommand.ERROR;
+        } catch (SQLException e) {
+            answerCommand = UserCommand.ERROR;
         }
-        encryptor.encrypt(sendAnswer(packet));
+        encryptor.encrypt(sendAnswer(packet, answerCommand, answer));
     }
 
-    private Packet sendAnswer(Packet packet) throws Exception {
+    private Packet sendAnswer(Packet packet, UserCommand command, byte[] message) throws Exception {
 
-        String OK = "OK";
-        final int COMMAND_SIZE = OK.getBytes().length;
+        final int COMMAND_SIZE = message.length;
         final int MESSAGE_SIZE = Integer.BYTES + Integer.BYTES + COMMAND_SIZE;
 
         ByteBuffer bufferMsg = ByteBuffer.allocate(MESSAGE_SIZE);
-        bufferMsg.putInt(packet.getBMsg().getCType())
+        bufferMsg.putInt(command.ordinal())
                 .putInt(packet.getBMsg().getBUserId())
-                .put(OK.getBytes());
+                .put(message);
 
         bufferMsg.position(0);
         Message messageOK = new Message(bufferMsg, MESSAGE_SIZE);

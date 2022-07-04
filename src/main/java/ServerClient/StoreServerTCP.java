@@ -1,6 +1,6 @@
 package ServerClient;
 
-import Shop.Command;
+import Shop.UserCommand;
 import Structure.FakeReceiver;
 import Structure.Sender;
 
@@ -80,7 +80,7 @@ public class StoreServerTCP extends Thread {
                 try {
                     inputLine = in.readLine();
                     if (inputLine == null) break;
-                    if (inputLine.equals(Command.CLOSE.toString())) {
+                    if (inputLine.equals(UserCommand.CLOSE.toString())) {
                         clientMap.remove(userID);
 
                         in.close();
