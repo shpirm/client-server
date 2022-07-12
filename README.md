@@ -1,2 +1,2 @@
 # client-server
-ClientServer Project
+ClientServer labs
